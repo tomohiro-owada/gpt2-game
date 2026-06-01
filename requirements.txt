@@ -1,0 +1,7 @@
+# GPT-2 logit caching. transformers pinned to the 4.x line as requested.
+transformers>=4,<5
+# torch is the backend; any recent 2.x works on a 3090. CUDA build is picked by pip
+# automatically on a GPU box, or install the matching wheel from pytorch.org.
+torch>=2.0
+# transformers needs one of these for tokenizer/model downloads + safetensors.
+safetensors>=0.4.0
