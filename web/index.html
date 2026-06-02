@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>play as gpt-2</title>
+  <script>
+    // set the theme before first paint (no flash). default = OS preference.
+    (function () {
+      try {
+        var t = localStorage.getItem("gpt2game.theme")
+          || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) { document.documentElement.setAttribute("data-theme", "dark"); }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <main id="app">
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle light / dark theme" title="Toggle light / dark"></button>
+    <header class="masthead">
+      <h1 class="title">play&nbsp;as&nbsp;<span class="title-accent">gpt&#8209;2</span><span class="caret" aria-hidden="true">▌</span></h1>
+      <p class="tagline">A real passage unfolds one token at a time. Guess what <em>actually</em> comes next — your chosen model's most confident predictions are the decoys. Then see who scored higher.</p>
+    </header>
+
+    <!-- START SCREEN -->
+    <section id="start" class="card">
+      <span class="card-rule" aria-hidden="true"></span>
+      <p class="kicker">choose a model family</p>
+      <div id="models" class="models-row"></div>
+
+      <p class="kicker section-gap">select difficulty</p>
+      <h2>How well do you think like the text?</h2>
+      <p class="muted">Each game walks one real passage from a three-word opening. Find the true next token — press <kbd>1</kbd>–<kbd>9</kbd> or click.</p>
+      <div class="modes">
+        <button class="mode" data-mode="easy">
+          <span class="mode-name">Easy</span>
+          <span class="mode-detail">3 choices</span>
+          <span class="mode-base">33% baseline</span>
+        </button>
+        <button class="mode mode-recommended" data-mode="medium">
+          <span class="mode-rec">recommended</span>
+          <span class="mode-name">Medium</span>
+          <span class="mode-detail">6 choices</span>
+          <span class="mode-base">17% baseline</span>
+        </button>
+        <button class="mode" data-mode="hard">
+          <span class="mode-name">Hard</span>
+          <span class="mode-detail">9 choices</span>
+          <span class="mode-base">11% baseline</span>
+        </button>
+        <button class="mode mode-insane" data-mode="type">
+          <span class="mode-name">Insane</span>
+          <span class="mode-detail">type it blind</span>
+          <span class="mode-base">no hints</span>
+        </button>
+      </div>
+
+      <div class="rough-pick">
+        <span class="rough-label">Text</span>
+        <div class="seg" id="rough-seg" role="group" aria-label="text filter">
+          <button class="seg-btn" data-rough="clean">English</button>
+          <button class="seg-btn" data-rough="mixed">Mixed</button>
+          <button class="seg-btn" data-rough="rough">Anything</button>
+        </div>
+        <span class="rough-hint muted">all real OpenWebText. English = clean sentence starts · Anything = raw, mid-sentence, messy</span>
+      </div>
+
+      <p id="data-note" class="datanote"></p>
+      <div id="board-start" class="board"></div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="game" class="card hidden">
+      <span class="card-rule" aria-hidden="true"></span>
+      <div class="hud">
+        <span id="progress" class="hud-progress">Word 1 / 12</span>
+        <span id="mode-label" class="pill"></span>
+        <span id="score" class="hud-score">You 0 · 🤖 0</span>
+      </div>
+      <div class="bar-track" aria-hidden="true"><div id="bar" class="bar-fill"></div></div>
+
+      <div class="readout">
+        <div class="readout-head">
+          <p class="kicker">the passage so far</p>
+          <div class="readout-actions">
+            <button id="to-menu" class="skip-btn" title="Back to the start screen.">← menu</button>
+            <button id="skip" class="skip-btn" title="Don't like this passage? Get a different one.">↻ skip</button>
+          </div>
+        </div>
+        <p id="context"></p>
+      </div>
+      <p class="legend">
+        <span class="tok you-right gpt-wrong">token</span>
+        <span class="legend-sep">fill = you, underline = biggest model (</span>
+        <span class="swatch good"></span>&nbsp;right
+        <span class="swatch bad"></span>&nbsp;wrong<span class="legend-sep">),</span>
+        <span class="tok given">grey</span><span class="legend-sep"> = given ·</span>
+        <span class="sp">·</span><span class="legend-sep"> = the token's leading space</span>
+      </p>
+
+      <p class="kicker prompt-kicker">what token comes next?</p>
+      <div id="choices" class="choices"></div>
+
+      <div id="type-area" class="hidden">
+        <div class="type-row">
+          <input id="type-input" type="text" autocomplete="off" autocapitalize="off"
+                 spellcheck="false" placeholder="type the next token…" />
+          <button id="type-submit" class="type-go">Guess</button>
+        </div>
+        <p class="type-hint">Tip: start with a space for a new word (e.g. <span class="mono">&nbsp;ing</span>). Right letters but the wrong space is a <span class="near-word">near&nbsp;miss</span>.</p>
+      </div>
+
+      <div id="result" class="result hidden"></div>
+      <div id="ladder-live" class="ladder"></div>
+    </section>
+
+    <!-- END SCREEN -->
+    <section id="end" class="card hidden">
+      <span class="card-rule" aria-hidden="true"></span>
+      <p class="kicker">final standings</p>
+      <p id="final-score" class="final"></p>
+      <p id="verdict" class="verdict"></p>
+      <div id="ladder" class="ladder"></div>
+      <div class="readout end-wrap">
+        <p class="kicker">the full passage</p>
+        <p id="end-passage"></p>
+      </div>
+      <div id="board" class="board"></div>
+      <button id="again" class="primary">Play again →</button>
+    </section>
+
+    <footer>
+      <span class="muted">Tokens are raw BPE pieces. A <span class="cont">·</span> marks the leading space a token owns (the start of a new word); a piece with no <span class="cont">·</span> glues straight onto the word before it, no gap. The answer is always the <em>real</em> next token in the source text.</span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
