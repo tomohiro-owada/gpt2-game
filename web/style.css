@@ -524,6 +524,9 @@ button.primary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2p
 footer { text-align: center; margin-top: 26px; font-size: 0.76rem; color: var(--dim); }
 footer .muted { color: var(--dim); }
 footer em { color: var(--ash); font-style: normal; }
+footer .credit { display: block; margin-top: 12px; max-width: 60ch; margin-left: auto; margin-right: auto; line-height: 1.5; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
 .cont { font-family: var(--mono); color: var(--accent); }
 
 .hidden { display: none !important; }
