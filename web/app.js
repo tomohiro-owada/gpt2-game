@@ -136,7 +136,7 @@ async function selectFamily(fam) {
 
 function setDataNote() {
   const note = el("data-note");
-  const kind = roughMode === "rough" ? "raw OWT " : roughMode === "mixed" ? "OWT " : "English OWT ";
+  const kind = roughMode === "rough" ? "raw Wikipedia " : roughMode === "mixed" ? "Wikipedia " : "clean Wikipedia ";
   const big = largest();
   note.textContent =
     `✓ ${DATA.label}: ${DATA.sizes.length} sizes (${DATA.sizes[0].params}–${big.params}) ` +

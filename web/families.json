@@ -1,17 +1,11 @@
 {
- "default": "qwen3",
+ "default": "gpt2",
  "families": [
   {
    "key": "gpt2",
    "label": "GPT-2",
    "file": "rounds.gpt2.json",
-   "blurb": "OpenAI, 2019 · sizes 124M → 1.5B. Trained on this exact kind of web text."
-  },
-  {
-   "key": "qwen3",
-   "label": "Qwen3",
-   "file": "rounds.qwen3.json",
-   "blurb": "Alibaba, 2025 · sizes 0.6B → 14B (Apache-2.0). Modern, sharper, smaller."
+   "blurb": "OpenAI, 2019 · sizes 124M → 1.5B. Wikipedia was excluded from its training data — these passages are genuinely unseen."
   }
  ]
 }

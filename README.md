@@ -1,5 +1,12 @@
 # Play as GPT-2 🤖
 
+> **This fork:** the passage corpus is rebuilt from **random English Wikipedia
+> article intros** (CC BY-SA 4.0, sampled with `sample_wikipedia.py`; each entry
+> in `corpus.json` carries its source title/URL) instead of OpenWebText, so all
+> shipped text is freely licensed. Only the GPT-2 family is included
+> (`web/rounds.gpt2.json`, regenerated over the new corpus). Mentions of
+> OpenWebText below describe the upstream project.
+
 A tiny web game: a real passage unfolds **one word at a time** from a tiny opening,
 and you guess the word that *actually* comes next. GPT-2's most-confident predictions
 are mixed in as the tempting **decoys** — so you're racing the model's intuition
