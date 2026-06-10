@@ -514,6 +514,7 @@ function onKey(e) {
 // ---------- wire up ----------
 function renderFamilyPicker() {
   const wrap = el("models");
+  if (!wrap) return;   // family picker removed — single family, auto-selected
   wrap.innerHTML = "";
   FAMILIES.forEach((f) => {
     const btn = document.createElement("button");
