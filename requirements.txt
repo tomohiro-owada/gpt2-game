@@ -5,3 +5,5 @@ transformers>=4,<5
 torch>=2.0
 # transformers needs one of these for tokenizer/model downloads + safetensors.
 safetensors>=0.4.0
+# the rinna Japanese GPT-2 family uses a SentencePiece (T5) tokenizer.
+sentencepiece>=0.1.99

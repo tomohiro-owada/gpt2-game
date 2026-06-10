@@ -4,10 +4,10 @@
 // (the real next token + GPT-2's top decoys, shuffled); "type" mode asks you
 // to type the next token yourself.
 const MODES = {
-  easy:   { label: "Easy",   k: 3, kind: "choices" },
-  medium: { label: "Medium", k: 6, kind: "choices" },
-  hard:   { label: "Hard",   k: 9, kind: "choices" },
-  type:   { label: "Insane", kind: "type" },
+  easy:   { label: "やさしい", k: 3, kind: "choices" },
+  medium: { label: "ふつう",   k: 6, kind: "choices" },
+  hard:   { label: "むずかしい", k: 9, kind: "choices" },
+  type:   { label: "鬼", kind: "type" },
 };
 
 const el = (id) => document.getElementById(id);
@@ -78,16 +78,16 @@ function renderLeaderboard(id, highlightTs) {
     const me = g.ts === highlightTs ? ' class="me"' : "";
     return `<tr${me}><td class="rk">${i + 1}</td><td class="pc">${g.pct}%</td>` +
       `<td>${g.score}/${g.total}</td><td>${escapeHtml(g.modeLabel)}</td>` +
-      `<td class="op">vs ${escapeHtml(g.oppShort)}</td><td class="dt">${fmtDate(g.ts)}</td></tr>`;
+      `<td class="op">対 ${escapeHtml(g.oppShort)}</td><td class="dt">${fmtDate(g.ts)}</td></tr>`;
   }).join("");
 
   const myRank = ranked.findIndex((g) => g.ts === highlightTs) + 1;
   const note = (highlightTs && myRank)
-    ? `<p class="board-note">This game ranked <b>#${myRank}</b> of ${all.length}.</p>` : "";
+    ? `<p class="board-note">この回は ${all.length} 件中 <b>#${myRank}</b> 位。</p>` : "";
 
   box.innerHTML =
-    `<div class="board-head"><p class="kicker">your leaderboard · top ${Math.min(8, all.length)} of ${all.length}</p>` +
-    `<button class="skip-btn board-clear">clear</button></div>` +
+    `<div class="board-head"><p class="kicker">あなたの記録 · 上位 ${Math.min(8, all.length)} / ${all.length}</p>` +
+    `<button class="skip-btn board-clear">消去</button></div>` +
     `<table class="board-table"><tbody>${rows}</tbody></table>${note}`;
   box.querySelector(".board-clear").addEventListener("click", () => {
     saveScores([]); refreshBoards();
@@ -100,7 +100,7 @@ function refreshBoards(highlightTs) {
 }
 
 // ---------- family + data loading ----------
-let DEFAULT_FAMILY = "qwen3";
+let DEFAULT_FAMILY = "rinna";
 
 async function loadFamilies() {
   try {
@@ -113,7 +113,7 @@ async function loadFamilies() {
       }
     }
   } catch (_) { /* fall through */ }
-  return [{ key: "gpt2", label: "GPT-2", file: "rounds.gpt2.json", blurb: "" }];
+  return [{ key: "rinna", label: "rinna 日本語GPT-2", file: "rounds.rinna.json", blurb: "" }];
 }
 
 async function loadDataset(fam) {
@@ -129,18 +129,18 @@ async function selectFamily(fam) {
     b.classList.toggle("active", b.dataset.key === fam.key));
   const note = el("data-note");
   note.className = "datanote";
-  note.textContent = `loading ${fam.label}…`;
+  note.textContent = `${fam.label} を読み込み中…`;
   DATA = DATASETS[fam.key] || (DATASETS[fam.key] = await loadDataset(fam));
   setDataNote();
 }
 
 function setDataNote() {
   const note = el("data-note");
-  const kind = roughMode === "rough" ? "raw OWT " : roughMode === "mixed" ? "OWT " : "English OWT ";
+  const kind = roughMode === "rough" ? "生の" : roughMode === "mixed" ? "" : "整った";
   const big = largest();
   note.textContent =
-    `✓ ${DATA.label}: ${DATA.sizes.length} sizes (${DATA.sizes[0].params}–${big.params}) ` +
-    `grade every token · ${pool().length} ${kind}passages.`;
+    `✓ ${DATA.label}：${DATA.sizes.length}サイズ（${DATA.sizes[0].params}〜${big.params}）が` +
+    `全トークンを採点 · ${kind}文章 ${pool().length} 本。`;
   note.className = "datanote real";
 }
 
@@ -228,7 +228,7 @@ function startGame(modeKey, avoid) {
   };
   el("mode-label").textContent = mode.kind === "type"
     ? `${mode.label} · ${DATA.label}`
-    : `${mode.label} · ${mode.k} · ${DATA.label}`;
+    : `${mode.label}・${mode.k}択 · ${DATA.label}`;
   el("result").classList.add("hidden");   // no "previous answer" yet
   show("game");
   renderStep();
@@ -261,7 +261,7 @@ function renderWalk(elId, animateLast) {
 
 function updateScore() {
   el("score").innerHTML =
-    `You <b>${game.score}</b> · <span class="bot">${largest().name}</span> <b>${game.gptScore}</b>`;
+    `あなた <b>${game.score}</b> · <span class="bot">${largest().name}</span> <b>${game.gptScore}</b>`;
 }
 
 function setBar() {
@@ -280,7 +280,7 @@ function renderStep() {
   const steps = game.passage.steps;
   const step = steps[game.stepIdx];
 
-  el("progress").textContent = `Word ${game.stepIdx + 1} / ${steps.length}`;
+  el("progress").textContent = `第 ${game.stepIdx + 1} / ${steps.length} トークン`;
   updateScore();
   setBar();
   updateLiveLadder();
@@ -397,9 +397,9 @@ function finishStep(result, step, typed, userTok) {
   // row 1: real · you · the largest model's pick
   const row1 =
     `<span class="res-status">${icon}</span>` +
-    `<span class="res-item"><span class="res-lab">real</span>` +
+    `<span class="res-item"><span class="res-lab">正解</span>` +
       `<span class="rtok real">${tokenHtml(step.true_token)}</span></span>` +
-    `<span class="res-item"><span class="res-lab">you</span>` +
+    `<span class="res-item"><span class="res-lab">あなた</span>` +
       `<span class="rtok r-${result}">${youInner}</span></span>` +
     `<span class="res-item"><span class="res-lab">${escapeHtml(largest().name)}</span>` +
       `<span class="rtok r-${gptResult}">${tokenHtml(big.top)}</span></span>`;
@@ -408,14 +408,14 @@ function finishStep(result, step, typed, userTok) {
   const strip = DATA.sizes.map((sz, i) => {
     const m = step.models[i];
     const cls = m.rank === 1 ? "ok" : "no";
-    return `<span class="sz sz-${cls}" title="${escapeHtml(sz.name)}: ${m.rank === 1 ? "got it" : "missed (real was #" + m.rank + ")"}">${escapeHtml(sz.params)}</span>`;
+    return `<span class="sz sz-${cls}" title="${escapeHtml(sz.name)}: ${m.rank === 1 ? "正解" : "はずれ（正解は#" + m.rank + "）"}">${escapeHtml(sz.params)}</span>`;
   }).join("");
 
   const resEl = el("result");
   resEl.className = `result ${result === "right" ? "correct" : result}`;
   resEl.innerHTML =
     `<div class="res-row">${row1}</div>` +
-    `<div class="res-sizes"><span class="res-lab">all sizes</span>${strip}</div>`;
+    `<div class="res-sizes"><span class="res-lab">全サイズ</span>${strip}</div>`;
 
   // auto-advance after a beat (press Enter/Space to skip the wait — see onKey)
   game.timer = setTimeout(advance, ADVANCE_MS);
@@ -450,17 +450,17 @@ function renderLadder(pct, targetId, compact) {
     `${bar(r.pct, "model")}<span class="rung-pct">${r.pct}%</span></div>`).join("");
 
   const youRow = pct == null ? "" :
-    `<div class="rung you"><span class="rung-name">YOU<span class="rung-params">so far</span></span>` +
+    `<div class="rung you"><span class="rung-name">あなた<span class="rung-params">現在</span></span>` +
     `${bar(pct, "me")}<span class="rung-pct">${pct}%</span></div>`;
 
-  let head = `<p class="kicker">${escapeHtml(DATA.label)} sizes — graded over the whole corpus</p>`;
+  let head = `<p class="kicker">${escapeHtml(DATA.label)} のサイズ別 — コーパス全体での正解率</p>`;
   if (!compact && pct != null) {
     let near = sizes[0];
     for (const r of sizes) if (Math.abs(r.pct - pct) < Math.abs(near.pct - pct)) near = r;
     const tip = game.mode.kind === "type" ? ""
-      : ` <span class="ladder-caveat">(choice modes flatter you — try Insane for a fair fight)</span>`;
-    head = `<p class="kicker">${escapeHtml(DATA.label)} family — where you land</p>` +
-      `<p class="ladder-verdict">You predicted like <b>${escapeHtml(near.name)}</b> (${near.pct}%).${tip}</p>`;
+      : ` <span class="ladder-caveat">（選択モードは甘め — フェアに戦うなら「鬼」モードで）</span>`;
+    head = `<p class="kicker">${escapeHtml(DATA.label)} 一族 — あなたの位置</p>` +
+      `<p class="ladder-verdict">あなたの予測は <b>${escapeHtml(near.name)}</b>（${near.pct}%）並み。${tip}</p>`;
   }
   box.innerHTML = head + youRow + rows;
 }
@@ -469,14 +469,14 @@ function endGame() {
   const total = game.passage.steps.length;
   const s = game.score;
   const big = largest().name;
-  el("final-score").innerHTML = `You ${s} / ${total} &nbsp;·&nbsp; ${big} ${game.gptScore} / ${total}`;
+  el("final-score").innerHTML = `あなた ${s} / ${total} &nbsp;·&nbsp; ${big} ${game.gptScore} / ${total}`;
   const pct = total ? Math.round((s / total) * 100) : 0;
   let verdict;
-  if (s > game.gptScore) verdict = `${pct}% — you out-predicted ${big}. Showing off.`;
-  else if (s === game.gptScore) verdict = `${pct}% — dead even with ${big}.`;
-  else if (pct >= 60) verdict = `${pct}% — strong, though ${big} edged you out.`;
-  else if (pct >= 30) verdict = `${pct}% — natural language is slippery.`;
-  else verdict = `${pct}% — predicting real text is harder than it looks.`;
+  if (s > game.gptScore) verdict = `${pct}% — ${big} に勝った。やるやん。`;
+  else if (s === game.gptScore) verdict = `${pct}% — ${big} と互角や。`;
+  else if (pct >= 60) verdict = `${pct}% — 上出来。けど ${big} に一歩及ばず。`;
+  else if (pct >= 30) verdict = `${pct}% — 自然な言葉は手強いなあ。`;
+  else verdict = `${pct}% — 本物の文章を当てるんは見た目より難しい。`;
   el("verdict").textContent = verdict;
   renderWalk("end-passage", false);   // the full color-coded passage
   renderLadder(pct, "ladder", false);
@@ -588,6 +588,6 @@ function init() {
     await selectFamily(def);
   } catch (e) {
     el("start").innerHTML =
-      `<h2>Failed to load</h2><p class="muted">${escapeHtml(String(e))}</p>`;
+      `<h2>読み込みに失敗しました</h2><p class="muted">${escapeHtml(String(e))}</p>`;
   }
 })();

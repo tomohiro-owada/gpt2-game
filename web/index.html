@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>play as gpt-2</title>
+  <title>GPT-2 になりきれ</title>
   <script>
     // set the theme before first paint (no flash). default = OS preference.
     (function () {
@@ -19,53 +19,53 @@
 <body>
   <div class="grain" aria-hidden="true"></div>
   <main id="app">
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle light / dark theme" title="Toggle light / dark"></button>
+    <button id="theme-toggle" class="theme-toggle" aria-label="ライト / ダークを切り替え" title="ライト / ダーク切り替え"></button>
     <header class="masthead">
-      <h1 class="title">play&nbsp;as&nbsp;<span class="title-accent">gpt&#8209;2</span><span class="caret" aria-hidden="true">▌</span></h1>
-      <p class="tagline">A real passage unfolds one token at a time. Guess what <em>actually</em> comes next — your chosen model's most confident predictions are the decoys. Then see who scored higher.</p>
+      <h1 class="title">GPT&#8209;2&nbsp;に<span class="title-accent">なりきれ</span><span class="caret" aria-hidden="true">▌</span></h1>
+      <p class="tagline">本物の文章が1トークンずつ現れる。<em>実際に</em>次に来る言葉を当てよう — 選んだモデルが自信を持って予測した言葉が「おとり」や。どっちが当てられるか勝負。</p>
     </header>
 
     <!-- START SCREEN -->
     <section id="start" class="card">
       <span class="card-rule" aria-hidden="true"></span>
-      <p class="kicker">choose a model family</p>
+      <p class="kicker">モデル一族を選ぶ</p>
       <div id="models" class="models-row"></div>
 
-      <p class="kicker section-gap">select difficulty</p>
-      <h2>How well do you think like the text?</h2>
-      <p class="muted">Each game walks one real passage from a three-word opening. Find the true next token — press <kbd>1</kbd>–<kbd>9</kbd> or click.</p>
+      <p class="kicker section-gap">難易度を選ぶ</p>
+      <h2>君はどれだけ「次の言葉」を当てられる？</h2>
+      <p class="muted">1ゲームで本物の文章を1つ、出だしから1トークンずつ歩く。次のトークンを当てよう — <kbd>1</kbd>〜<kbd>9</kbd> かクリックで。</p>
       <div class="modes">
         <button class="mode" data-mode="easy">
-          <span class="mode-name">Easy</span>
-          <span class="mode-detail">3 choices</span>
-          <span class="mode-base">33% baseline</span>
+          <span class="mode-name">やさしい</span>
+          <span class="mode-detail">3択</span>
+          <span class="mode-base">あてずっぽ 33%</span>
         </button>
         <button class="mode mode-recommended" data-mode="medium">
-          <span class="mode-rec">recommended</span>
-          <span class="mode-name">Medium</span>
-          <span class="mode-detail">6 choices</span>
-          <span class="mode-base">17% baseline</span>
+          <span class="mode-rec">おすすめ</span>
+          <span class="mode-name">ふつう</span>
+          <span class="mode-detail">6択</span>
+          <span class="mode-base">あてずっぽ 17%</span>
         </button>
         <button class="mode" data-mode="hard">
-          <span class="mode-name">Hard</span>
-          <span class="mode-detail">9 choices</span>
-          <span class="mode-base">11% baseline</span>
+          <span class="mode-name">むずかしい</span>
+          <span class="mode-detail">9択</span>
+          <span class="mode-base">あてずっぽ 11%</span>
         </button>
         <button class="mode mode-insane" data-mode="type">
-          <span class="mode-name">Insane</span>
-          <span class="mode-detail">type it blind</span>
-          <span class="mode-base">no hints</span>
+          <span class="mode-name">鬼</span>
+          <span class="mode-detail">自分で入力</span>
+          <span class="mode-base">ヒントなし</span>
         </button>
       </div>
 
       <div class="rough-pick">
-        <span class="rough-label">Text</span>
-        <div class="seg" id="rough-seg" role="group" aria-label="text filter">
-          <button class="seg-btn" data-rough="clean">English</button>
-          <button class="seg-btn" data-rough="mixed">Mixed</button>
-          <button class="seg-btn" data-rough="rough">Anything</button>
+        <span class="rough-label">文章</span>
+        <div class="seg" id="rough-seg" role="group" aria-label="文章フィルタ">
+          <button class="seg-btn" data-rough="clean">整った文</button>
+          <button class="seg-btn" data-rough="mixed">ミックス</button>
+          <button class="seg-btn" data-rough="rough">なんでも</button>
         </div>
-        <span class="rough-hint muted">all real OpenWebText. English = clean sentence starts · Anything = raw, mid-sentence, messy</span>
+        <span class="rough-hint muted">ぜんぶ本物の日本語Wikipedia。整った文 = 文頭からの導入文 · なんでも = 記事の途中から、生っぽい</span>
       </div>
 
       <p id="data-note" class="datanote"></p>
@@ -76,41 +76,41 @@
     <section id="game" class="card hidden">
       <span class="card-rule" aria-hidden="true"></span>
       <div class="hud">
-        <span id="progress" class="hud-progress">Word 1 / 12</span>
+        <span id="progress" class="hud-progress">第 1 / 12 語</span>
         <span id="mode-label" class="pill"></span>
-        <span id="score" class="hud-score">You 0 · 🤖 0</span>
+        <span id="score" class="hud-score">あなた 0 · 🤖 0</span>
       </div>
       <div class="bar-track" aria-hidden="true"><div id="bar" class="bar-fill"></div></div>
 
       <div class="readout">
         <div class="readout-head">
-          <p class="kicker">the passage so far</p>
+          <p class="kicker">ここまでの文章</p>
           <div class="readout-actions">
-            <button id="to-menu" class="skip-btn" title="Back to the start screen.">← menu</button>
-            <button id="skip" class="skip-btn" title="Don't like this passage? Get a different one.">↻ skip</button>
+            <button id="to-menu" class="skip-btn" title="スタート画面に戻る。">← メニュー</button>
+            <button id="skip" class="skip-btn" title="この文章が気に入らん？別のに変える。">↻ スキップ</button>
           </div>
         </div>
         <p id="context"></p>
       </div>
       <p class="legend">
-        <span class="tok you-right gpt-wrong">token</span>
-        <span class="legend-sep">fill = you, underline = biggest model (</span>
-        <span class="swatch good"></span>&nbsp;right
-        <span class="swatch bad"></span>&nbsp;wrong<span class="legend-sep">),</span>
-        <span class="tok given">grey</span><span class="legend-sep"> = given ·</span>
-        <span class="sp">·</span><span class="legend-sep"> = the token's leading space</span>
+        <span class="tok you-right gpt-wrong">トークン</span>
+        <span class="legend-sep">塗り = あなた、下線 = 最大モデル（</span>
+        <span class="swatch good"></span>&nbsp;正解
+        <span class="swatch bad"></span>&nbsp;不正解<span class="legend-sep">）、</span>
+        <span class="tok given">灰色</span><span class="legend-sep"> = 最初から与えられた語 ·</span>
+        <span class="sp">·</span><span class="legend-sep"> = トークン先頭の空白（英語のみ）</span>
       </p>
 
-      <p class="kicker prompt-kicker">what token comes next?</p>
+      <p class="kicker prompt-kicker">次のトークンは？</p>
       <div id="choices" class="choices"></div>
 
       <div id="type-area" class="hidden">
         <div class="type-row">
           <input id="type-input" type="text" autocomplete="off" autocapitalize="off"
-                 spellcheck="false" placeholder="type the next token…" />
-          <button id="type-submit" class="type-go">Guess</button>
+                 spellcheck="false" placeholder="次のトークンを入力…" />
+          <button id="type-submit" class="type-go">入力</button>
         </div>
-        <p class="type-hint">Tip: start with a space for a new word (e.g. <span class="mono">&nbsp;ing</span>). Right letters but the wrong space is a <span class="near-word">near&nbsp;miss</span>.</p>
+        <p class="type-hint">ヒント: 句読点や送りがなも1トークン区切り。漢字・かなの単位はモデルが切ったまま当てる。</p>
       </div>
 
       <div id="result" class="result hidden"></div>
@@ -120,20 +120,20 @@
     <!-- END SCREEN -->
     <section id="end" class="card hidden">
       <span class="card-rule" aria-hidden="true"></span>
-      <p class="kicker">final standings</p>
+      <p class="kicker">最終成績</p>
       <p id="final-score" class="final"></p>
       <p id="verdict" class="verdict"></p>
       <div id="ladder" class="ladder"></div>
       <div class="readout end-wrap">
-        <p class="kicker">the full passage</p>
+        <p class="kicker">文章ぜんぶ</p>
         <p id="end-passage"></p>
       </div>
       <div id="board" class="board"></div>
-      <button id="again" class="primary">Play again →</button>
+      <button id="again" class="primary">もう一回 →</button>
     </section>
 
     <footer>
-      <span class="muted">Tokens are raw BPE pieces. A <span class="cont">·</span> marks the leading space a token owns (the start of a new word); a piece with no <span class="cont">·</span> glues straight onto the word before it, no gap. The answer is always the <em>real</em> next token in the source text.</span>
+      <span class="muted">トークンは生のサブワード片。<span class="cont">·</span> はそのトークンが持つ先頭の空白（＝新しい単語の始まり、英語の場合）。<span class="cont">·</span> が無い片は前の語にそのままくっつく。日本語は空白で区切らんさかい、片はそのまま連結される。答えは常に元テキストの<em>本物の</em>次トークン。</span>
     </footer>
   </main>
 

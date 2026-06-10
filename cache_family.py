@@ -27,6 +27,12 @@ DECOY_FROM = os.environ["DECOY_FROM"]
 QUANT8 = set(filter(None, os.environ.get("QUANT8", "").split(",")))
 QUANT_BIG = set(filter(None, os.environ.get("QUANT_BIG", "").split(",")))
 START_WORDS, MAX_STEPS, DECOY_POOL = 3, 60, 9
+# START_MODE = "words" (English BPE: space-prefixed tokens mark word starts) or
+# "tokens" (Japanese SentencePiece has no inter-word spaces, so just take the
+# first START_TOKENS tokens as the opening prefix).
+START_MODE = os.environ.get("START_MODE", "words")
+START_TOKENS = int(os.environ.get("START_TOKENS", "4"))
+USE_FAST = os.environ.get("USE_FAST", "1") != "0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "web", f"rounds.{FAMILY}.json")
 
@@ -41,10 +47,21 @@ def word_start_cut(ids, tok, n):
     return len(ids)
 
 
+def start_cut(ids, tok):
+    if START_MODE == "tokens":
+        return min(START_TOKENS, len(ids))
+    return word_start_cut(ids, tok, START_WORDS)
+
+
 def main():
     corpus = json.load(open(os.path.join(HERE, "corpus.json")))
-    tok = AutoTokenizer.from_pretrained(TOKENIZER_ID)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tok = AutoTokenizer.from_pretrained(TOKENIZER_ID, use_fast=USE_FAST)
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     decoy_idx = next(i for i, m in enumerate(MODELS) if m["name"] == DECOY_FROM)
 
     # passage/step skeleton (private "_" fields stripped before writing)
@@ -54,8 +71,8 @@ def main():
             text, rough = entry.get("text", "").strip(), bool(entry.get("rough"))
         else:
             text, rough = str(entry).strip(), False
-        ids = tok.encode(text)
-        start = word_start_cut(ids, tok, START_WORDS)
+        ids = tok.encode(text, add_special_tokens=False)
+        start = start_cut(ids, tok)
         if len(ids) < start + 4:
             continue
         last = min(len(ids), start + MAX_STEPS)
