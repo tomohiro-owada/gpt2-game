@@ -73,6 +73,12 @@ def main():
     def bad_tok(tid):
         return "�" in tok.decode([tid]) or (UNK_ID is not None and tid == UNK_ID)
 
+    # "showable" = something the player can actually read and guess. Excludes the
+    # bad tokens above AND empty/whitespace-only tokens (SentencePiece's ▁ word-
+    # boundary marker decodes to "", which the UI renders as a meaningless "∅").
+    def showable(tid):
+        return not bad_tok(tid) and tok.decode([tid]).strip() != ""
+
     # passage/step skeleton (private "_" fields stripped before writing)
     passages = []
     for i, entry in enumerate(corpus):
@@ -85,12 +91,14 @@ def main():
         if len(ids) < start + 4:
             continue
         last = min(len(ids), start + MAX_STEPS)
-        # drop passages whose opening has an unshowable token, and truncate the
-        # walk at the first such token so we never grade/show "�" or "<unk>"
+        # drop passages whose opening has a "�"/<unk> token (NOT empty ones — the
+        # leading SentencePiece ▁ dummy-prefix decodes to "" and is harmless), and
+        # truncate the walk at the first UNSHOWABLE token so we never ask the
+        # player to guess "�", "<unk>", or an empty "∅" token
         if any(bad_tok(t) for t in ids[:start]):
             continue
         for pos in range(start, last):
-            if bad_tok(ids[pos]):
+            if not showable(ids[pos]):
                 last = pos
                 break
         if last - start < 4:
@@ -100,7 +108,10 @@ def main():
                  for pos in range(start, last)]
         passages.append({"id": i, "rough": rough, "_ids": ids, "_last": last,
                          "prefix": tok.decode(ids[:start]),
-                         "prefix_tokens": [tok.decode([t]) for t in ids[:start]],
+                         # drop empty (▁) tokens from the displayed prefix so the
+                         # opening doesn't render a stray "∅"
+                         "prefix_tokens": [d for t in ids[:start]
+                                           if (d := tok.decode([t])).strip() != ""],
                          "steps": steps})
 
     hits = [0] * len(MODELS)
@@ -130,9 +141,9 @@ def main():
                     # displayed "top" = the model's best SHOWABLE pick (rank is
                     # still the true token's true rank over the full distribution)
                     top_id = int(row.argmax())
-                    if bad_tok(top_id):
-                        for cand in torch.topk(dist, 6).indices.tolist():
-                            if not bad_tok(cand):
+                    if not showable(top_id):
+                        for cand in torch.topk(dist, 8).indices.tolist():
+                            if showable(cand):
                                 top_id = cand
                                 break
                     s["models"][mi] = {"rank": rank,
@@ -140,10 +151,10 @@ def main():
                                        "prob": round(float(dist[tid]), 6)}
                     if mi == decoy_idx:
                         hits[mi] += (rank == 1)
-                        tp, ti = torch.topk(dist, DECOY_POOL + 5)
+                        tp, ti = torch.topk(dist, DECOY_POOL + 14)
                         for r, (pr, did) in enumerate(zip(tp.tolist(), ti.tolist()), 1):
                             dtok = tok.decode([did])
-                            if did == tid or dtok == s["true_token"] or bad_tok(did):
+                            if did == tid or dtok == s["true_token"] or not showable(did):
                                 continue
                             s["decoys"].append({"token": dtok, "token_id": did,
                                                 "prob": round(float(pr), 6), "rank": r})

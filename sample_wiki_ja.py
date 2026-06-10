@@ -90,6 +90,10 @@ def random_titles(n):
 
 
 def clean(text):
+    # strip "== Section ==" headings and any stray "=" runs (plaintext extracts
+    # keep section markers, which tokenize into meaningless empty "∅" tokens)
+    text = re.sub(r"={2,}[^=\n]*={2,}", "", text)
+    text = re.sub(r"=+", "", text)
     # drop parentheticals that carry Latin/ASCII (English names, romanizations,
     # symbols) — the rinna SentencePiece vocab maps those to <unk>
     text = re.sub(r"[（(][^（()）]*[A-Za-z0-9][^（()）]*[）)]", "", text)
