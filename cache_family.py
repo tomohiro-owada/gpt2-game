@@ -64,6 +64,15 @@ def main():
         device = "cpu"
     decoy_idx = next(i for i, m in enumerate(MODELS) if m["name"] == DECOY_FROM)
 
+    # A token is "unshowable" if it decodes to the replacement char "�" (byte-BPE
+    # splitting multibyte UTF-8) OR is the tokenizer's <unk> (SentencePiece maps
+    # out-of-vocab chars — Latin runs, rare kanji — to it). Either way we never
+    # want to grade or show it, so drop/truncate exactly as the original "�" guard.
+    UNK_ID = tok.unk_token_id
+
+    def bad_tok(tid):
+        return "�" in tok.decode([tid]) or (UNK_ID is not None and tid == UNK_ID)
+
     # passage/step skeleton (private "_" fields stripped before writing)
     passages = []
     for i, entry in enumerate(corpus):
@@ -76,13 +85,12 @@ def main():
         if len(ids) < start + 4:
             continue
         last = min(len(ids), start + MAX_STEPS)
-        # byte-level BPE splits multibyte UTF-8 into byte tokens that decode to
-        # the replacement char "�"; drop passages whose opening has one, and
-        # truncate the walk at the first such token so we never grade/show "�"
-        if any("�" in tok.decode([t]) for t in ids[:start]):
+        # drop passages whose opening has an unshowable token, and truncate the
+        # walk at the first such token so we never grade/show "�" or "<unk>"
+        if any(bad_tok(t) for t in ids[:start]):
             continue
         for pos in range(start, last):
-            if "�" in tok.decode([ids[pos]]):
+            if bad_tok(ids[pos]):
                 last = pos
                 break
         if last - start < 4:
@@ -119,15 +127,23 @@ def main():
                     dist = torch.softmax(row, dim=-1)
                     tid = s["true_token_id"]
                     rank = int((dist > dist[tid]).sum()) + 1
+                    # displayed "top" = the model's best SHOWABLE pick (rank is
+                    # still the true token's true rank over the full distribution)
+                    top_id = int(row.argmax())
+                    if bad_tok(top_id):
+                        for cand in torch.topk(dist, 6).indices.tolist():
+                            if not bad_tok(cand):
+                                top_id = cand
+                                break
                     s["models"][mi] = {"rank": rank,
-                                       "top": tok.decode([int(row.argmax())]),
+                                       "top": tok.decode([top_id]),
                                        "prob": round(float(dist[tid]), 6)}
                     if mi == decoy_idx:
                         hits[mi] += (rank == 1)
-                        tp, ti = torch.topk(dist, DECOY_POOL + 1)
+                        tp, ti = torch.topk(dist, DECOY_POOL + 5)
                         for r, (pr, did) in enumerate(zip(tp.tolist(), ti.tolist()), 1):
                             dtok = tok.decode([did])
-                            if did == tid or dtok == s["true_token"]:
+                            if did == tid or dtok == s["true_token"] or bad_tok(did):
                                 continue
                             s["decoys"].append({"token": dtok, "token_id": did,
                                                 "prob": round(float(pr), 6), "rank": r})

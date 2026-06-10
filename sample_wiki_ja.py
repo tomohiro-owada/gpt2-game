@@ -23,7 +23,12 @@ import urllib.parse
 import urllib.request
 
 N_GOOD = 50     # clean article intros        -> rough: False
-N_RAW = 30      # raw mid-article windows      -> rough: True
+N_RAW = 20      # raw mid-article windows      -> rough: True
+# the playable model (rinna) tokenizer: we reject any passage whose playable
+# window tokenizes to an <unk> (out-of-vocab Latin runs / rare kanji), so the
+# game never asks you to guess "<unk>" and passages stay full length.
+MODEL_TOKENIZER = "rinna/japanese-gpt2-medium"
+UNK_CHECK_TOKENS = 70   # START(≤5) + MAX_STEPS(60) walked, with headroom
 SEED = 11
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "corpus.json")
@@ -85,10 +90,26 @@ def random_titles(n):
 
 
 def clean(text):
+    # drop parentheticals that carry Latin/ASCII (English names, romanizations,
+    # symbols) — the rinna SentencePiece vocab maps those to <unk>
+    text = re.sub(r"[（(][^（()）]*[A-Za-z0-9][^（()）]*[）)]", "", text)
     # drop parenthetical pronunciation clutter and collapse whitespace
     text = re.sub(r"[ \t　]+", " ", text)
     text = re.sub(r"\n{2,}", "\n", text.strip())
     return text
+
+
+_TOK = None
+
+
+def model_clean(text):
+    """True if the playable token window has NO <unk> for the rinna tokenizer."""
+    global _TOK
+    if _TOK is None:
+        from transformers import T5Tokenizer
+        _TOK = T5Tokenizer.from_pretrained(MODEL_TOKENIZER)
+    ids = _TOK.encode(text, add_special_tokens=False)[:UNK_CHECK_TOKENS]
+    return _TOK.unk_token_id not in ids
 
 
 def safe(t):
@@ -132,8 +153,9 @@ def main():
     good, raw, seen = [], [], set()
 
     titles = SEEDS[:]
-    # pull extra random titles to fill both tiers
-    titles += random_titles(N_GOOD + N_RAW)
+    # pull extra random titles to fill both tiers (the <unk> filter rejects many,
+    # so over-fetch to leave enough clean candidates)
+    titles += random_titles(2 * (N_GOOD + N_RAW))
 
     for title in titles:
         if len(good) >= N_GOOD and len(raw) >= N_RAW:
@@ -148,11 +170,11 @@ def main():
             continue
         if len(good) < N_GOOD:
             g = good_chunk(ex)
-            if g and safe(g) and g[:24] not in seen:
+            if g and safe(g) and model_clean(g) and g[:24] not in seen:
                 seen.add(g[:24]); good.append(g); continue
         if len(raw) < N_RAW:
             r = raw_chunk(ex)
-            if r and safe(r) and r[:24] not in seen:
+            if r and safe(r) and model_clean(r) and r[:24] not in seen:
                 seen.add(r[:24]); raw.append(r)
 
     corpus = ([{"text": g, "rough": False} for g in good] +
