@@ -11,13 +11,7 @@
    "key": "gpt2",
    "label": "GPT-2 (英語)",
    "file": "rounds.gpt2.json",
-   "blurb": "OpenAI, 2019 · 124M → 1.5B。英語の文章で遊ぶ。"
-  },
-  {
-   "key": "qwen3",
-   "label": "Qwen3 (英語)",
-   "file": "rounds.qwen3.json",
-   "blurb": "Alibaba, 2025 · 0.6B → 14B (Apache-2.0)。英語の文章。"
+   "blurb": "OpenAI, 2019 · 124M → 1.5B。英語版Wikipedia（CC BY-SA 4.0）で遊ぶ。"
   }
  ]
 }
